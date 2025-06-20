@@ -6,12 +6,12 @@ const socketio = require("socket.io");
 const app = express();
 const server = http.createServer(app);
 
-app.use(express.json());
 
 app.use(cors({
   origin: "https://assigment-int.vercel.app",  // ✅ Replace with actual domain
   credentials: true,
 }));
+app.use(express.json());
 
 const io = socketio(server, {
   cors: {
