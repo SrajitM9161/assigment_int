@@ -1,42 +1,40 @@
 const prisma = require('../prismaClient');
 const { v4: uuid } = require('uuid');
 
-function broadcastParticipants(io) {
-  const sockets = [...io.sockets.sockets.values()];
-  const participants = sockets
-    .filter(s => s.data?.userId && s.data?.sessionId && s.data?.name)
-    .map(s => ({
-      name: s.data.name,
-      sessionId: s.data.sessionId,
-    }));
+function teacherSocketHandler(io) {
+  io.on('connection', (socket) => {
+    socket.on('teacher:join', async ({ name }, callback) => {
+      try {
+        const sessionId = uuid();
 
-  io.emit('participants:update', participants);
-}
+        const user = await prisma.user.create({
+          data: {
+            name,
+            sessionId,
+          },
+        });
 
-function teacherSocketHandler(io, socket) {
-  socket.on('teacher:join', async ({ name }, callback) => {
-    try {
-      const sessionId = uuid();
+        socket.data.userId = user.id;
+        socket.data.sessionId = sessionId;
+        socket.data.name = name;
 
-      const user = await prisma.user.create({
-        data: {
-          name,
-          sessionId,
-        },
-      });
+        callback({ success: true, sessionId });
+        console.log(`👨‍🏫 Teacher joined: ${name} (${sessionId})`);
 
-      socket.data.userId = user.id;
-      socket.data.sessionId = sessionId;
-      socket.data.name = name;
+        const sockets = [...io.sockets.sockets.values()];
+        const participants = sockets
+          .filter(s => s.data?.userId && s.data?.sessionId && s.data?.name)
+          .map(s => ({
+            name: s.data.name,
+            sessionId: s.data.sessionId,
+          }));
 
-      callback({ success: true, sessionId });
-      console.log(`👨‍🏫 Teacher joined: ${name} (${sessionId})`);
-
-      broadcastParticipants(io); // ✅ Broadcast updated list
-    } catch (err) {
-      console.error('❌ Teacher join error:', err);
-      callback({ success: false, message: 'Error joining' });
-    }
+        io.emit('participants:update', participants);
+      } catch (err) {
+        console.error('❌ Teacher join error:', err);
+        callback({ success: false, message: 'Error joining' });
+      }
+    });
   });
 }
 

@@ -1,42 +1,40 @@
-const { v4: uuidv4 } = require('uuid');
 const prisma = require('../prismaClient');
+const { v4: uuidv4 } = require('uuid');
 
-function broadcastParticipants(io) {
-  const sockets = [...io.sockets.sockets.values()];
-  const participants = sockets
-    .filter(s => s.data?.userId && s.data?.sessionId && s.data?.name)
-    .map(s => ({
-      name: s.data.name,
-      sessionId: s.data.sessionId,
-    }));
+function userSocketHandler(io) {
+  io.on('connection', (socket) => {
+    socket.on('student:join', async ({ name }, callback) => {
+      try {
+        const sessionId = uuidv4();
 
-  io.emit('participants:update', participants);
-}
+        const user = await prisma.user.create({
+          data: {
+            name,
+            sessionId,
+          },
+        });
 
-function userSocketHandler(io, socket) {
-  socket.on('student:join', async ({ name }, callback) => {
-    try {
-      const sessionId = uuidv4();
+        socket.data.userId = user.id;
+        socket.data.sessionId = sessionId;
+        socket.data.name = name;
 
-      const user = await prisma.user.create({
-        data: {
-          name,
-          sessionId,
-        },
-      });
+        console.log(`✅ Student joined: ${name} (${sessionId})`);
+        callback({ success: true, sessionId });
 
-      socket.data.userId = user.id;
-      socket.data.sessionId = sessionId;
-      socket.data.name = name;
+        const sockets = [...io.sockets.sockets.values()];
+        const participants = sockets
+          .filter(s => s.data?.userId && s.data?.sessionId && s.data?.name)
+          .map(s => ({
+            name: s.data.name,
+            sessionId: s.data.sessionId,
+          }));
 
-      console.log(`✅ Student joined: ${name} (${sessionId})`);
-      callback({ success: true, sessionId });
-
-      broadcastParticipants(io); // ✅ Notify all clients
-    } catch (error) {
-      console.error('❌ Error joining student:', error);
-      callback({ success: false, message: 'Error joining' });
-    }
+        io.emit('participants:update', participants);
+      } catch (error) {
+        console.error('❌ Error joining student:', error);
+        callback({ success: false, message: 'Error joining' });
+      }
+    });
   });
 }
 

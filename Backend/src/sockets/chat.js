@@ -1,4 +1,3 @@
-// --- src/sockets/chatSocketHandler.js ---
 const prisma = require('../prismaClient');
 
 function chatSocketHandler(io) {
@@ -10,7 +9,6 @@ function chatSocketHandler(io) {
       const userId = socket.data.userId;
       const senderName = socket.data.name || 'Unknown';
 
-      // Save in DB if user exists
       if (userId) {
         try {
           await prisma.message.create({
@@ -24,7 +22,6 @@ function chatSocketHandler(io) {
         }
       }
 
-      // Broadcast message to all clients
       const payload = {
         sender: senderName,
         message: trimmed,
