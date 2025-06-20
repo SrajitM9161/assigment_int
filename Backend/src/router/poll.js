@@ -5,7 +5,7 @@ const schedulePollEnd = require('../utils/schedulePollEnd');
 const checkAndEndPoll = require('../utils/checkAndEndPoll');
 
 module.exports = (io) => {
-  // ✅ Create a new poll
+  // ✅ Create a new poll via REST
   router.post('/', async (req, res) => {
     try {
       const { question, options, timeLimit } = req.body;
@@ -14,7 +14,7 @@ module.exports = (io) => {
         return res.status(400).json({ message: 'Invalid poll data' });
       }
 
-      // 🔴 End existing polls if any
+      // End previous polls
       await prisma.poll.updateMany({
         where: { isActive: true },
         data: { isActive: false, endedAt: new Date(), status: 'manual_end' },
@@ -27,24 +27,24 @@ module.exports = (io) => {
           isActive: true,
           status: 'active',
           options: {
-            create: options.map((opt) => {
-              if (typeof opt === 'string') {
-                return { text: opt, isCorrect: false };
-              }
-              return {
-                text: opt?.text || '',
-                isCorrect: opt?.isCorrect || false,
-              };
-            }),
+            create: options.map((opt) =>
+              typeof opt === 'string'
+                ? { text: opt, isCorrect: false }
+                : {
+                    text: opt?.text || '',
+                    isCorrect: opt?.isCorrect || false,
+                  }
+            ),
           },
         },
         include: { options: true },
       });
 
-      io.emit('new_poll', {
+      // ✅ Emit poll with consistent event name
+      io.emit('new-poll', {
         pollId: poll.id,
         question: poll.question,
-        options: poll.options.map((opt) => ({
+        options: poll.options.map(opt => ({
           id: opt.id,
           text: opt.text,
           isCorrect: opt.isCorrect,
@@ -52,9 +52,7 @@ module.exports = (io) => {
         timeLimit: poll.timeLimit,
       });
 
-      // ✅ This only works *if* backend isn't restarted
       schedulePollEnd(io, poll);
-
       res.status(201).json({ success: true, poll });
     } catch (err) {
       console.error(err);
@@ -94,7 +92,7 @@ module.exports = (io) => {
     }
   });
 
-  // ✅ New: safe fallback for frontend to check active poll
+  // ✅ Active poll fallback
   router.get('/active', async (req, res) => {
     try {
       const poll = await prisma.poll.findFirst({

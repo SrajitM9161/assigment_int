@@ -1,9 +1,31 @@
 const prisma = require('../prismaClient');
 
 function pollSocketHandler(io, socket) {
+  // ✅ Create poll via socket
+  socket.on('create-poll', async (pollData) => {
+    console.log('🟢 New poll created via socket:', pollData);
+
+    try {
+      const createdPoll = await prisma.poll.create({
+        data: {
+          question: pollData.question,
+          isActive: true,
+          options: {
+            create: pollData.options.map(opt => ({ text: opt })),
+          },
+        },
+        include: { options: true },
+      });
+
+      io.emit('new-poll', createdPoll); // ✅ Consistent event name
+    } catch (err) {
+      console.error('❌ Failed to create poll via socket:', err);
+    }
+  });
+
+  // ✅ Handle poll answer
   socket.on('submit_answer', async ({ pollId, optionId, sessionId, name }, callback) => {
     try {
-      // Step 1: Resolve userId from socket or fallback to sessionId
       let userId = socket.data.userId;
 
       if (!userId && sessionId) {
@@ -14,7 +36,6 @@ function pollSocketHandler(io, socket) {
           socket.data.name = user.name;
           socket.data.sessionId = sessionId;
         } else if (name) {
-          // If user doesn't exist, create and attach
           const newUser = await prisma.user.create({
             data: { sessionId, name },
           });
@@ -25,9 +46,8 @@ function pollSocketHandler(io, socket) {
         }
       }
 
-      // ✅ Validate essential data
       if (!userId || !pollId || !optionId) {
-        console.error('❌ Missing data:', { userId, pollId, optionId, name, sessionId });
+        console.error('❌ Missing data:', { userId, pollId, optionId });
         return callback({ success: false, message: 'Missing data' });
       }
 
@@ -36,15 +56,26 @@ function pollSocketHandler(io, socket) {
         include: { options: true },
       });
 
-      if (!poll || !poll.isActive) return callback({ success: false, message: 'Poll inactive' });
+      if (!poll || !poll.isActive) {
+        return callback({ success: false, message: 'Poll inactive' });
+      }
 
       const validOption = poll.options.find(opt => opt.id === optionId);
-      if (!validOption) return callback({ success: false, message: 'Invalid option' });
+      if (!validOption) {
+        return callback({ success: false, message: 'Invalid option' });
+      }
 
-      const existing = await prisma.response.findFirst({ where: { pollId, userId } });
-      if (existing) return callback({ success: false, message: 'Already answered' });
+      const existing = await prisma.response.findFirst({
+        where: { pollId, userId },
+      });
 
-      await prisma.response.create({ data: { userId, pollId, optionId } });
+      if (existing) {
+        return callback({ success: false, message: 'Already answered' });
+      }
+
+      await prisma.response.create({
+        data: { userId, pollId, optionId },
+      });
 
       callback({ success: true });
 
@@ -65,7 +96,9 @@ function pollSocketHandler(io, socket) {
       const results = grouped.map(r => ({
         optionId: r.optionId,
         count: r._count.optionId,
-        percent: totalParticipants > 0 ? Math.round((r._count.optionId / totalParticipants) * 100) : 0,
+        percent: totalParticipants > 0
+          ? Math.round((r._count.optionId / totalParticipants) * 100)
+          : 0,
       }));
 
       io.emit('poll_result_update', {
@@ -80,7 +113,7 @@ function pollSocketHandler(io, socket) {
         total: totalParticipants,
       });
     } catch (err) {
-      console.error('Submit error:', err);
+      console.error('❌ Submit error:', err);
       callback({ success: false });
     }
   });
