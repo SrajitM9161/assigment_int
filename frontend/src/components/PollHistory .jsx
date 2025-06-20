@@ -9,7 +9,7 @@ export default function PollHistory() {
   useEffect(() => {
     const fetchPolls = async () => {
       try {
-        const res = await axios.get('https://assigment-int-1.onrender.com/api/poll/history');
+        const res = await axios.get('https://dependable-caring-production.up.railway.app/api/poll/history');
         setPolls(res.data || []);
       } catch (err) {
         console.error('Error fetching poll history:', err);

@@ -3,7 +3,7 @@ import RoleCard from '../components/roleCard';
 import { io } from 'socket.io-client';
 import { useNavigate } from 'react-router-dom';
 
-const socket = io('https://assigment-int-1.onrender.com/'); // socket connection
+const socket = io('https://dependable-caring-production.up.railway.app/'); // socket connection
 
 function LandingPage() {
   const [role, setRole] = useState(null);
