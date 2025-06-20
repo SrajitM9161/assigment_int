@@ -1,15 +1,22 @@
 const prisma = require('../prismaClient');
 
-async function checkAndEndPoll(io, poll) {
-  const now = new Date();
-  const endAt = new Date(poll.createdAt.getTime() + poll.timeLimit * 1000);
+function schedulePollEnd(io, poll) {
+  const timeout = poll.timeLimit * 1000;
 
-  if (poll.isActive && now > endAt) {
-    await prisma.poll.update({
+  setTimeout(async () => {
+    const existing = await prisma.poll.findUnique({
+      where: { id: poll.id },
+    });
+
+    if (!existing || !existing.isActive) return;
+
+    const endedAt = new Date();
+
+    const updated = await prisma.poll.update({
       where: { id: poll.id },
       data: {
         isActive: false,
-        endedAt: now,
+        endedAt,
         status: 'timeout',
       },
     });
@@ -21,18 +28,18 @@ async function checkAndEndPoll(io, poll) {
     });
 
     io.emit('poll_ended', {
-      pollId: poll.id,
-      question: poll.question,
-      timeLimit: poll.timeLimit,
-      endedAt: now,
+      pollId: updated.id,
+      question: updated.question,
+      endedAt,
+      timeLimit: updated.timeLimit,
       results: results.map(r => ({
         optionId: r.optionId,
         count: r._count.optionId,
       })),
     });
 
-    console.log(`✅ Poll ${poll.id} auto-ended`);
-  }
+    console.log(`✅ Poll ${poll.id} auto-ended after ${poll.timeLimit}s`);
+  }, timeout);
 }
 
-module.exports = checkAndEndPoll;
+module.exports = schedulePollEnd;
