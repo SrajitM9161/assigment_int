@@ -7,13 +7,13 @@ const app = express();
 const server = http.createServer(app);
 
 app.use(cors({
-  origin: "https://your-vercel-app.vercel.app",  // ✅ Replace with actual domain
+  origin: "https://assigment-int.vercel.app/",  // ✅ Replace with actual domain
   credentials: true,
 }));
 
 const io = socketio(server, {
   cors: {
-    origin: "https://your-vercel-app.vercel.app",  // ✅ Replace with actual domain
+    origin: "https://assigment-int.vercel.app/",  // ✅ Replace with actual domain
     methods: ["GET", "POST"],
     credentials: true,
   },
