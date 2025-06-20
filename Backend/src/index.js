@@ -7,15 +7,20 @@ const broadcastParticipants = require('./utils/broadcast');
 const app = express();
 const server = http.createServer(app);
 
+// ✅ Correct CORS: allow frontend domain
 const io = new Server(server, {
   cors: {
-    origin: 'https://assigment-int.vercel.app/', // In production, replace with your frontend domain
+    origin: 'https://assigment-int.vercel.app', // ✅ Allow frontend
     methods: ['GET', 'POST'],
+    credentials: true, // Optional, if needed for cookies or auth
   },
 });
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+  origin: 'https://assigment-int.vercel.app', // ✅ Same as above
+  credentials: true,
+}));
 app.use(express.json());
 
 // Socket Handlers
@@ -28,6 +33,7 @@ const teacherSocketHandler = require('./sockets/teacher');
 io.on('connection', (socket) => {
   console.log('✅ User connected:', socket.id);
 
+  // Handle all sockets
   userSocketHandler(io, socket, broadcastParticipants);
   teacherSocketHandler(io, socket, broadcastParticipants);
   pollSocketHandler(io, socket);
