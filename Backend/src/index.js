@@ -25,10 +25,10 @@ io.on("connection", (socket) => {
 });
 
 // 🔁 your handlers here
-require('./sockets/chatSocketHandler')(io);
-require('./sockets/pollSocketHandler')(io);
-require('./sockets/teacherSocketHandler')(io);
-require('./sockets/userSocketHandler')(io);
+require('./sockets/chat')(io);
+require('./sockets/pollSocket')(io);
+require('./sockets/teacher')(io);
+require('./sockets/user')(io);
 
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
