@@ -28,7 +28,7 @@ export default function StudentPoll() {
   }, [sessionId, name]);
 
   useEffect(() => {
-    socket.on('new_poll', (pollData) => {
+    const handleNewPoll = (pollData) => {
       if (sessionId && name) {
         socket.emit('student:join', { name, sessionId }, () => {});
       }
@@ -39,16 +39,18 @@ export default function StudentPoll() {
       setResults([]);
       setPollEnded(false);
       setIsLoading(false);
-      setTimeLeft(pollData.timeLimit);
+      setTimeLeft(pollData.timeLimit || 60);
       toast.success('📢 New poll started!');
-    });
+    };
+
+    socket.on('new-poll', handleNewPoll);
 
     socket.on('poll_result_update', (data) => {
-      if (data.pollId === poll?.pollId) setResults(data.results);
+      if (data.pollId === poll?.id) setResults(data.results);
     });
 
     socket.on('poll_ended', (data) => {
-      if (data.pollId === poll?.pollId) {
+      if (data.pollId === poll?.id) {
         setResults(data.results);
         setPollEnded(true);
         setTimeLeft(0);
@@ -57,7 +59,7 @@ export default function StudentPoll() {
     });
 
     socket.on('student_answered_count_update', ({ pollId, answered, total }) => {
-      if (poll?.pollId === pollId) {
+      if (poll?.id === pollId) {
         setAnsweredCount(answered);
         const rate = total > 0 ? Math.round((answered / total) * 100) : 0;
         setSubmissionRate(rate);
@@ -69,7 +71,7 @@ export default function StudentPoll() {
     const loaderTimeout = setTimeout(() => setIsLoading(false), 2000);
 
     return () => {
-      socket.off('new_poll');
+      socket.off('new-poll', handleNewPoll);
       socket.off('poll_result_update');
       socket.off('poll_ended');
       socket.off('participants:update');
@@ -93,7 +95,7 @@ export default function StudentPoll() {
     socket.emit(
       'submit_answer',
       {
-        pollId: poll.pollId,
+        pollId: poll.id,
         optionId: selected,
         sessionId,
         name,
