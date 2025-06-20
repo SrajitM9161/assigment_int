@@ -1,8 +1,8 @@
 import { io } from 'socket.io-client';
 
-const socket = io('https://assigment-int-1.onrender.com', {
+const socket = io(process.env.NEXT_PUBLIC_BACKEND_URL, {
   transports: ['websocket'],
-  autoConnect: true,
+  withCredentials: true,
 });
 
 export default socket;

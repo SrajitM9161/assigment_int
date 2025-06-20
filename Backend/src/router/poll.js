@@ -1,11 +1,11 @@
-// --- express routes: poll.routes.js ---
 const express = require('express');
 const router = express.Router();
 const prisma = require('../prismaClient');
 const schedulePollEnd = require('../utils/schedulePollEnd');
+const checkAndEndPoll = require('../utils/checkAndEndPoll');
 
 module.exports = (io) => {
-  // Create a new poll via API (alternative to socket)
+  // ✅ Create a new poll
   router.post('/', async (req, res) => {
     try {
       const { question, options, timeLimit } = req.body;
@@ -14,6 +14,7 @@ module.exports = (io) => {
         return res.status(400).json({ message: 'Invalid poll data' });
       }
 
+      // 🔴 End existing polls if any
       await prisma.poll.updateMany({
         where: { isActive: true },
         data: { isActive: false, endedAt: new Date(), status: 'manual_end' },
@@ -51,6 +52,7 @@ module.exports = (io) => {
         timeLimit: poll.timeLimit,
       });
 
+      // ✅ This only works *if* backend isn't restarted
       schedulePollEnd(io, poll);
 
       res.status(201).json({ success: true, poll });
@@ -60,7 +62,7 @@ module.exports = (io) => {
     }
   });
 
-  // Poll history for teacher dashboard or admin
+  // ✅ Poll history
   router.get('/history', async (req, res) => {
     try {
       const polls = await prisma.poll.findMany({
@@ -88,6 +90,25 @@ module.exports = (io) => {
       res.json(result);
     } catch (err) {
       console.error('Failed to fetch poll history:', err);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  // ✅ New: safe fallback for frontend to check active poll
+  router.get('/active', async (req, res) => {
+    try {
+      const poll = await prisma.poll.findFirst({
+        where: { isActive: true },
+        include: { options: true },
+      });
+
+      if (poll) {
+        await checkAndEndPoll(io, poll);
+      }
+
+      res.json(poll || null);
+    } catch (err) {
+      console.error('Failed to fetch active poll:', err);
       res.status(500).json({ message: 'Internal server error' });
     }
   });

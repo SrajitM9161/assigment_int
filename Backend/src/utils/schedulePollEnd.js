@@ -1,42 +1,38 @@
 const prisma = require('../prismaClient');
 
-function schedulePollEnd(io, poll) {
-  setTimeout(async () => {
-    try {
-      const checkPoll = await prisma.poll.findUnique({ where: { id: poll.id } });
-      if (!checkPoll || !checkPoll.isActive) return;
+async function checkAndEndPoll(io, poll) {
+  const now = new Date();
+  const endAt = new Date(poll.createdAt.getTime() + poll.timeLimit * 1000);
 
-      await prisma.poll.update({
-        where: { id: poll.id },
-        data: {
-          isActive: false,
-          status: 'timeout',
-          endedAt: new Date(),
-        },
-      });
+  if (poll.isActive && now > endAt) {
+    await prisma.poll.update({
+      where: { id: poll.id },
+      data: {
+        isActive: false,
+        endedAt: now,
+        status: 'timeout',
+      },
+    });
 
-      const results = await prisma.response.groupBy({
-        by: ['optionId'],
-        where: { pollId: poll.id },
-        _count: { optionId: true },
-      });
+    const results = await prisma.response.groupBy({
+      by: ['optionId'],
+      where: { pollId: poll.id },
+      _count: { optionId: true },
+    });
 
-      io.emit('poll_ended', {
-        pollId: poll.id,
-        question: poll.question,
-        timeLimit: poll.timeLimit,
-        endedAt: new Date(),
-        results: results.map(r => ({
-          optionId: r.optionId,
-          count: r._count.optionId,
-        })),
-      });
+    io.emit('poll_ended', {
+      pollId: poll.id,
+      question: poll.question,
+      timeLimit: poll.timeLimit,
+      endedAt: now,
+      results: results.map(r => ({
+        optionId: r.optionId,
+        count: r._count.optionId,
+      })),
+    });
 
-      console.log(`✅ Poll ${poll.id} auto-ended.`);
-    } catch (err) {
-      console.error('❌ Error auto-ending poll:', err);
-    }
-  }, poll.timeLimit * 1000);
+    console.log(`✅ Poll ${poll.id} auto-ended`);
+  }
 }
 
-module.exports = schedulePollEnd;
+module.exports = checkAndEndPoll;

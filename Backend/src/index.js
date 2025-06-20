@@ -9,7 +9,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: '*', // In production, replace with your frontend domain
+    origin: 'https://assigment-int.vercel.app/', // In production, replace with your frontend domain
     methods: ['GET', 'POST'],
   },
 });

@@ -1,16 +1,14 @@
 import { useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
+import socket from '../socket';
 import OptionInput from '../components/OptionInput';
 import TimeDropdown from '../components/TimeDropdown';
 import ChatWindow from '../components/ChatPopup';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { useUser } from '../context/UserContext'; // ✅ correct hook import
-
-const socket = io('https://assigment-int-1.onrender.com/');
+import { useUser } from '../context/UserContext';
 
 export default function TeacherPoll() {
-  const { sessionId, name } = useUser(); // ✅ correct usage
+  const { sessionId, name } = useUser();
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState([
     { text: '', isCorrect: false },
@@ -29,7 +27,7 @@ export default function TeacherPoll() {
     if (sessionId && name) {
       socket.emit('teacher:join', { name }, () => {});
     }
-  }, []);
+  }, [sessionId, name]);
 
   useEffect(() => {
     socket.on('participants:update', (data) => setParticipants(data));

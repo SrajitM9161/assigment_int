@@ -1,25 +1,23 @@
 import { useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
 import { useNavigate } from 'react-router-dom';
 import ChatPopup from '../components/ChatPopup';
 import { useUser } from '../context/UserContext';
-
-const socket = io('https://assigment-int-1.onrender.com'); // ✅ Your Render backend
+import socket from '../socket';
 
 export default function StudentPage() {
   const [name, setName] = useState('');
   const [joined, setJoined] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const navigate = useNavigate();
-  const { saveUser, sessionId } = useUser(); // ✅ Access context
+  const { saveUser, sessionId } = useUser();
 
   const handleJoin = () => {
     if (!name.trim()) return alert('Please enter your name');
-    if (joined) return; // ✅ prevent double clicks
+    if (joined) return;
 
     socket.emit('student:join', { name }, (res) => {
       if (res.success) {
-        saveUser(res.sessionId, name); // ✅ Save to context + localStorage
+        saveUser(res.sessionId, name);
         setJoined(true);
       } else {
         alert(res.message);
@@ -27,10 +25,8 @@ export default function StudentPage() {
     });
   };
 
-  // ✅ Navigate only when both joined and sessionId are available
   useEffect(() => {
     if (joined && sessionId) {
-      console.log('✅ Navigating with sessionId:', sessionId);
       navigate('/student/poll');
     }
   }, [joined, sessionId, navigate]);

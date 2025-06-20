@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
+import socket from '../socket';
 import ChatWindow from '../components/ChatPopup';
 import Loader from '../components/Loader';
 import { useUser } from '../context/UserContext';
 import toast from 'react-hot-toast';
-
-const socket = io('https://assigment-int-1.onrender.com');
 
 export default function StudentPoll() {
   const { sessionId, name } = useUser();
@@ -32,9 +30,7 @@ export default function StudentPoll() {
   useEffect(() => {
     socket.on('new_poll', (pollData) => {
       if (sessionId && name) {
-        socket.emit('student:join', { name, sessionId }, (res) => {
-          if (!res.success) toast.error('Re-join failed');
-        });
+        socket.emit('student:join', { name, sessionId }, () => {});
       }
 
       setPoll(pollData);
@@ -99,8 +95,8 @@ export default function StudentPoll() {
       {
         pollId: poll.pollId,
         optionId: selected,
-        sessionId, // added
-        name, // added
+        sessionId,
+        name,
       },
       (res) => {
         if (res.success) {
