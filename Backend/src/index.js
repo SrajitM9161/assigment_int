@@ -30,6 +30,9 @@ require('./sockets/pollSocket')(io);
 require('./sockets/teacher')(io);
 require('./sockets/user')(io);
 
+const pollRoutes = require('./router/poll')(io); // 👈 fix was here
+app.use('/poll', pollRoutes); // 👈 mounted correctly
+
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
