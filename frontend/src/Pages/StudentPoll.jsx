@@ -27,6 +27,35 @@ export default function StudentPoll() {
     }
   }, [sessionId, name]);
 
+  // ✅ Fallback REST fetch if poll missed via socket
+  useEffect(() => {
+    const fetchActivePoll = async () => {
+      try {
+        const res = await fetch('https://dependable-caring-production.up.railway.app/poll/active');
+        const data = await res.json();
+
+        if (data && data.id) {
+          setPoll({
+            pollId: data.id,
+            question: data.question,
+            options: data.options,
+            timeLimit: data.timeLimit || 60,
+          });
+          setTimeLeft(data.timeLimit || 60);
+          setIsLoading(false);
+          toast.success('📢 Active poll loaded!');
+        } else {
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Failed to fetch active poll:', error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchActivePoll();
+  }, []);
+
   useEffect(() => {
     const handleNewPoll = (pollData) => {
       if (sessionId && name) {
@@ -46,11 +75,13 @@ export default function StudentPoll() {
     socket.on('new-poll', handleNewPoll);
 
     socket.on('poll_result_update', (data) => {
-      if (data.pollId === poll?.pollId) setResults(data.results);
+      if (data.pollId === (poll?.pollId || poll?.id)) {
+        setResults(data.results);
+      }
     });
 
     socket.on('poll_ended', (data) => {
-      if (data.pollId === poll?.pollId) {
+      if (data.pollId === (poll?.pollId || poll?.id)) {
         setResults(data.results);
         setPollEnded(true);
         setTimeLeft(0);
@@ -59,7 +90,7 @@ export default function StudentPoll() {
     });
 
     socket.on('student_answered_count_update', ({ pollId, answered, total }) => {
-      if (poll?.pollId === pollId) {
+      if (pollId === (poll?.pollId || poll?.id)) {
         setAnsweredCount(answered);
         const rate = total > 0 ? Math.round((answered / total) * 100) : 0;
         setSubmissionRate(rate);
