@@ -6,14 +6,19 @@ const broadcastParticipants = require('./utils/broadcast');
 
 const app = express();
 const server = http.createServer(app);
+
 const io = new Server(server, {
-  cors: { origin: '*', methods: ['GET', 'POST'] },
+  cors: {
+    origin: '*', // In production, replace with your frontend domain
+    methods: ['GET', 'POST'],
+  },
 });
 
+// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// Socket handlers
+// Socket Handlers
 const userSocketHandler = require('./sockets/user');
 const pollSocketHandler = require('./sockets/pollSocket');
 const adminSocketHandler = require('./sockets/admin');
@@ -35,7 +40,8 @@ io.on('connection', (socket) => {
   });
 });
 
+// Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });

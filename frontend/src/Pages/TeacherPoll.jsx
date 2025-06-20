@@ -8,7 +8,7 @@ import { UserContext } from '../context/UserContext';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
-const socket = io('http://localhost:5000');
+const socket = io('https://assigment-int-1.onrender.com/');
 
 export default function TeacherPoll() {
   const { sessionId, name } = useContext(UserContext);

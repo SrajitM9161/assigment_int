@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import ChatPopup from '../components/ChatPopup';
 import { useUser } from '../context/UserContext';
 
-const socket = io('http://localhost:5000');
+const socket = io('https://assigment-int-1.onrender.com/');
 
 export default function StudentPage() {
   const [name, setName] = useState('');

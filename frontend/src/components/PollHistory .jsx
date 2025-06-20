@@ -9,7 +9,7 @@ export default function PollHistory() {
   useEffect(() => {
     const fetchPolls = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/poll/history');
+        const res = await axios.get('https://assigment-int-1.onrender.com/api/poll/history');
         setPolls(res.data || []);
       } catch (err) {
         console.error('Error fetching poll history:', err);
@@ -52,8 +52,12 @@ export default function PollHistory() {
                 );
                 return (
                   <tr key={poll.id} className="text-sm text-gray-700 border-t">
-                    <td className="px-4 py-2 border-b max-w-xs truncate" title={poll.question}>{poll.question}</td>
-                    <td className="px-4 py-2 border-b">{new Date(poll.createdAt).toLocaleString()}</td>
+                    <td className="px-4 py-2 border-b max-w-xs truncate" title={poll.question}>
+                      {poll.question}
+                    </td>
+                    <td className="px-4 py-2 border-b">
+                      {new Date(poll.createdAt).toLocaleString()}
+                    </td>
                     <td className="px-4 py-2 border-b text-[#7765DA]">
                       {mostAnswered.text} ({mostAnswered.percent || 0}%)
                     </td>

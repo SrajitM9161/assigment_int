@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { useUser } from '../context/UserContext';
 
-const socket = io('http://localhost:5000');
+const socket = io('https://assigment-int-1.onrender.com/');
 
 export default function TeacherPage() {
   const [name, setName] = useState('');

@@ -5,7 +5,7 @@ import Loader from '../components/Loader';
 import { UserContext } from '../context/UserContext';
 import toast from 'react-hot-toast';
 
-const socket = io('http://localhost:5000');
+const socket = io('https://assigment-int-1.onrender.com/');
 
 export default function StudentPoll() {
   const { sessionId, name } = useContext(UserContext);
