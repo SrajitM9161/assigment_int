@@ -10,6 +10,7 @@ function pollSocketHandler(io) {
           data: {
             question: pollData.question,
             isActive: true,
+            timeLimit: pollData.timeLimit || 60,
             options: {
               create: pollData.options.map(opt => ({ text: opt })),
             },
@@ -17,7 +18,11 @@ function pollSocketHandler(io) {
           include: { options: true },
         });
 
-        io.emit('new-poll', createdPoll);
+        io.emit('new-poll', {
+          ...createdPoll,
+          pollId: createdPoll.id,
+          timeLimit: createdPoll.timeLimit,
+        });
       } catch (err) {
         console.error('❌ Failed to create poll via socket:', err);
       }

@@ -46,11 +46,11 @@ export default function StudentPoll() {
     socket.on('new-poll', handleNewPoll);
 
     socket.on('poll_result_update', (data) => {
-      if (data.pollId === poll?.id) setResults(data.results);
+      if (data.pollId === poll?.pollId) setResults(data.results);
     });
 
     socket.on('poll_ended', (data) => {
-      if (data.pollId === poll?.id) {
+      if (data.pollId === poll?.pollId) {
         setResults(data.results);
         setPollEnded(true);
         setTimeLeft(0);
@@ -59,7 +59,7 @@ export default function StudentPoll() {
     });
 
     socket.on('student_answered_count_update', ({ pollId, answered, total }) => {
-      if (poll?.id === pollId) {
+      if (poll?.pollId === pollId) {
         setAnsweredCount(answered);
         const rate = total > 0 ? Math.round((answered / total) * 100) : 0;
         setSubmissionRate(rate);
@@ -95,7 +95,7 @@ export default function StudentPoll() {
     socket.emit(
       'submit_answer',
       {
-        pollId: poll.id,
+        pollId: poll.pollId,
         optionId: selected,
         sessionId,
         name,
@@ -119,7 +119,7 @@ export default function StudentPoll() {
   return (
     <div className="max-w-2xl mx-auto p-6">
       <div className="flex justify-between items-center mb-2">
-        <h2 className="text-lg font-semibold">Question 1</h2>
+        <h2 className="text-lg font-semibold">Question</h2>
         <div className="flex gap-3 items-center">
           {timeLeft !== null && !pollEnded && (
             <div className="text-sm text-red-600 font-bold flex items-center">
