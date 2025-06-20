@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const prisma = require('../prismaClient');
-const schedulePollEnd = require('../utils/schedulePollEnd');
-const checkAndEndPoll = require('../utils/checkAndEndPoll');
+const schedulePollEnd = require('../utils/schedulePollEnd'); // ✅ KEEP THIS
+// ❌ Removed checkAndEndPoll
 
 module.exports = (io) => {
   // ✅ Create a new poll via REST
@@ -14,7 +14,7 @@ module.exports = (io) => {
         return res.status(400).json({ message: 'Invalid poll data' });
       }
 
-      // End previous polls
+      // End previous active polls
       await prisma.poll.updateMany({
         where: { isActive: true },
         data: { isActive: false, endedAt: new Date(), status: 'manual_end' },
@@ -40,7 +40,6 @@ module.exports = (io) => {
         include: { options: true },
       });
 
-      // ✅ Emit poll with consistent event name
       io.emit('new-poll', {
         pollId: poll.id,
         question: poll.question,
@@ -52,7 +51,9 @@ module.exports = (io) => {
         timeLimit: poll.timeLimit,
       });
 
+      // ✅ Automatically end after timeLimit
       schedulePollEnd(io, poll);
+
       res.status(201).json({ success: true, poll });
     } catch (err) {
       console.error(err);
@@ -92,17 +93,13 @@ module.exports = (io) => {
     }
   });
 
-  // ✅ Active poll fallback
+  // ✅ Active poll route (no need to checkAndEndPoll anymore)
   router.get('/active', async (req, res) => {
     try {
       const poll = await prisma.poll.findFirst({
         where: { isActive: true },
         include: { options: true },
       });
-
-      if (poll) {
-        await checkAndEndPoll(io, poll);
-      }
 
       res.json(poll || null);
     } catch (err) {
