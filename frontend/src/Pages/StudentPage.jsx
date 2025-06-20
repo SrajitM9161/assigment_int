@@ -1,31 +1,39 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useNavigate } from 'react-router-dom';
 import ChatPopup from '../components/ChatPopup';
 import { useUser } from '../context/UserContext';
 
-const socket = io('https://assigment-int-1.onrender.com/');
+const socket = io('https://assigment-int-1.onrender.com'); // ✅ Your Render backend
 
 export default function StudentPage() {
   const [name, setName] = useState('');
   const [joined, setJoined] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const navigate = useNavigate();
-  const { saveUser } = useUser(); // ✅ grab context
+  const { saveUser, sessionId } = useUser(); // ✅ Access context
 
   const handleJoin = () => {
     if (!name.trim()) return alert('Please enter your name');
+    if (joined) return; // ✅ prevent double clicks
 
     socket.emit('student:join', { name }, (res) => {
       if (res.success) {
-        saveUser(res.sessionId, name); // ✅ store in context and localStorage
+        saveUser(res.sessionId, name); // ✅ Save to context + localStorage
         setJoined(true);
-        navigate('/student/poll');
       } else {
         alert(res.message);
       }
     });
   };
+
+  // ✅ Navigate only when both joined and sessionId are available
+  useEffect(() => {
+    if (joined && sessionId) {
+      console.log('✅ Navigating with sessionId:', sessionId);
+      navigate('/student/poll');
+    }
+  }, [joined, sessionId, navigate]);
 
   return (
     <div className="max-w-xl mx-auto py-10 px-4 text-center">
@@ -36,9 +44,7 @@ export default function StudentPage() {
         Let’s <span className="text-black">Get Started</span>
       </h1>
       <p className="text-sm text-gray-500 mb-6">
-        If you’re a student, you’ll be able to{' '}
-        <span className="font-semibold text-black">submit your answers</span>, participate in live polls,
-        and see how your responses compare with your classmates.
+        Enter your name to join the live poll system as a student.
       </p>
 
       <div className="mb-4 text-left">

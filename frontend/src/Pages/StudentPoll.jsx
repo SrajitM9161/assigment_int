@@ -1,14 +1,14 @@
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import ChatWindow from '../components/ChatPopup';
 import Loader from '../components/Loader';
-import { UserContext } from '../context/UserContext';
+import { useUser } from '../context/UserContext';
 import toast from 'react-hot-toast';
 
-const socket = io('https://assigment-int-1.onrender.com/');
+const socket = io('https://assigment-int-1.onrender.com');
 
 export default function StudentPoll() {
-  const { sessionId, name } = useContext(UserContext);
+  const { sessionId, name } = useUser();
   const [poll, setPoll] = useState(null);
   const [selected, setSelected] = useState(null);
   const [hasAnswered, setHasAnswered] = useState(false);
@@ -21,7 +21,6 @@ export default function StudentPoll() {
   const [answeredCount, setAnsweredCount] = useState(0);
   const [submissionRate, setSubmissionRate] = useState(0);
 
-  // Initial join
   useEffect(() => {
     if (sessionId && name) {
       socket.emit('student:join', { name, sessionId }, (res) => {
@@ -32,7 +31,6 @@ export default function StudentPoll() {
 
   useEffect(() => {
     socket.on('new_poll', (pollData) => {
-      // ✅ Ensure session is attached
       if (sessionId && name) {
         socket.emit('student:join', { name, sessionId }, (res) => {
           if (!res.success) toast.error('Re-join failed');
@@ -94,19 +92,25 @@ export default function StudentPoll() {
 
   const submitAnswer = () => {
     if (!selected) return toast.error('Please select an option.');
-    if (!sessionId) return toast.error('Missing session ID.');
+    if (!sessionId || !name) return toast.error('Missing session ID.');
 
-    socket.emit('submit_answer', {
-      pollId: poll.pollId,
-      optionId: selected,
-    }, (res) => {
-      if (res.success) {
-        setHasAnswered(true);
-        toast.success('✅ Answer submitted!');
-      } else {
-        toast.error(res.message || 'Submission failed.');
+    socket.emit(
+      'submit_answer',
+      {
+        pollId: poll.pollId,
+        optionId: selected,
+        sessionId, // added
+        name, // added
+      },
+      (res) => {
+        if (res.success) {
+          setHasAnswered(true);
+          toast.success('✅ Answer submitted!');
+        } else {
+          toast.error(res.message || 'Submission failed.');
+        }
       }
-    });
+    );
   };
 
   const getPercent = (optionId) => results.find(r => r.optionId === optionId)?.percent || 0;

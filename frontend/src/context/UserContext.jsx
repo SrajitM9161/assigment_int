@@ -1,26 +1,24 @@
+// src/context/UserContext.jsx
 import { createContext, useContext, useState, useEffect } from 'react';
 
 const UserContext = createContext();
 
 export function UserProvider({ children }) {
-  const [sessionId, setSessionId] = useState(null);
+  const [sessionId, setSessionId] = useState('');
   const [name, setName] = useState('');
 
   useEffect(() => {
-    const id = sessionStorage.getItem('sessionId');
-    const storedName = sessionStorage.getItem('name');
-
-    if (id && storedName) {
-      setSessionId(id);
-      setName(storedName);
-    }
+    const storedId = localStorage.getItem('sessionId');
+    const storedName = localStorage.getItem('name');
+    if (storedId) setSessionId(storedId);
+    if (storedName) setName(storedName);
   }, []);
 
   const saveUser = (id, userName) => {
-    sessionStorage.setItem('sessionId', id);
-    sessionStorage.setItem('name', userName);
     setSessionId(id);
     setName(userName);
+    localStorage.setItem('sessionId', id);
+    localStorage.setItem('name', userName);
   };
 
   return (
@@ -31,4 +29,3 @@ export function UserProvider({ children }) {
 }
 
 export const useUser = () => useContext(UserContext);
-export { UserContext };

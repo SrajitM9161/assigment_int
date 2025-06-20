@@ -1,9 +1,9 @@
 // --- ChatPopup.jsx ---
-import { useEffect, useState, useContext } from 'react';
-import { UserContext } from '../context/UserContext';
+import { useEffect, useState } from 'react';
+import { useUser } from '../context/UserContext'; // ✅ Correct import
 
 export default function ChatPopup({ socket, onClose, isTeacher }) {
-  const { sessionId, name } = useContext(UserContext);
+  const { sessionId, name } = useUser(); // ✅ Correct usage of context
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [participants, setParticipants] = useState([]);
@@ -33,7 +33,11 @@ export default function ChatPopup({ socket, onClose, isTeacher }) {
 
   const sendMessage = () => {
     if (!message.trim()) return;
-    socket.emit('chat:message', { message });
+    socket.emit('chat:message', {
+      sender: name,
+      sessionId,
+      message,
+    });
     setMessage('');
   };
 
@@ -72,10 +76,7 @@ export default function ChatPopup({ socket, onClose, isTeacher }) {
           {messages.map((msg, idx) => {
             const isMe = msg.sender === name;
             return (
-              <div
-                key={idx}
-                className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
-              >
+              <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                 <div
                   className={`rounded-lg px-3 py-2 text-sm max-w-[75%] ${
                     isMe ? 'bg-[#7765DA] text-white' : 'bg-gray-200 text-gray-800'

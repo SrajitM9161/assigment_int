@@ -1,17 +1,16 @@
-// --- TeacherPoll.jsx ---
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import OptionInput from '../components/OptionInput';
 import TimeDropdown from '../components/TimeDropdown';
 import ChatWindow from '../components/ChatPopup';
-import { UserContext } from '../context/UserContext';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '../context/UserContext'; // ✅ correct hook import
 
 const socket = io('https://assigment-int-1.onrender.com/');
 
 export default function TeacherPoll() {
-  const { sessionId, name } = useContext(UserContext);
+  const { sessionId, name } = useUser(); // ✅ correct usage
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState([
     { text: '', isCorrect: false },
